@@ -1,6 +1,6 @@
 import { getEmployeeById } from "../services/employee.service";
 import { Country, Tds } from "../constants";
-import { fetchGrossSalary, fetchSalariesByCountry } from "../controllers/salary.controller";
+import { fetchAvgSalariesByJob, fetchGrossSalary, fetchSalariesByCountry } from "../controllers/salary.controller";
 import { db } from "../DB/dbConfig";
 
 jest.mock("../services/employee.service");
@@ -109,6 +109,49 @@ describe("Salary Controller Tests", () => {
       });
 
       await fetchSalariesByCountry(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  describe("fetchAvgSalariesByJob", () => {
+    it("should return avg salary by job", async () => {
+      const req: any = { params: { jobtitle: "software engineer" } };
+      const res = mockResponse();
+
+      const mockGet = jest.fn().mockReturnValue({
+        avgSalary: 6000,
+      });
+
+      (db.prepare as jest.Mock).mockReturnValue({ get: mockGet });
+
+      await fetchAvgSalariesByJob(req, res);
+
+      expect(mockGet).toHaveBeenCalledWith("software engineer");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        avgSalary: 6000,
+      });
+    });
+
+    it("should return 400 if jobtitle missing", async () => {
+      const req: any = { params: {} };
+      const res = mockResponse();
+
+      await fetchAvgSalariesByJob(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should handle errors", async () => {
+      const req: any = { params: { jobtitle: "dev" } };
+      const res = mockResponse();
+
+      (db.prepare as jest.Mock).mockImplementation(() => {
+        throw new Error("DB error");
+      });
+
+      await fetchAvgSalariesByJob(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
