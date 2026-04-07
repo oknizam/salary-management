@@ -44,3 +44,24 @@ export async function fetchSalariesByCountry(req: any, res: any) {
   }
 
 }
+
+export async function fetchAvgSalariesByJob(req: any, res: any) {
+  try {
+    const jobtitle = req.params.jobtitle;
+
+    if (!jobtitle) {
+      return res.status(400).json({ message: "please send job title" })
+    }
+
+    const response = db.prepare(`SELECT avg(salary) as avgSalary FROM employees WHERE jobTitle = ?`).get(jobtitle.toLowerCase())
+
+
+    return res.status(200).json(response);
+
+  }
+  catch (err) {
+    console.log("error in fething gross salary", err)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+
+}
