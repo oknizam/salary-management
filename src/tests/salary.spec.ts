@@ -1,6 +1,7 @@
 import { getEmployeeById } from "../services/employee.service";
 import { Country, Tds } from "../constants";
-import { fetchGrossSalary } from "../controllers/salary.controller";
+import { fetchGrossSalary, fetchSalariesByCountry } from "../controllers/salary.controller";
+import { db } from "../DB/dbConfig";
 
 jest.mock("../services/employee.service");
 jest.mock("../DB/dbConfig", () => ({
@@ -60,6 +61,54 @@ describe("Salary Controller Tests", () => {
       });
 
       await fetchGrossSalary(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+
+  describe("fetchSalariesByCountry", () => {
+    it("should return avg, max, min salary", async () => {
+      const req: any = { params: { country: "india" } };
+      const res = mockResponse();
+
+      const mockGet = jest.fn().mockReturnValue({
+        avgSalary: 5000,
+        maxSalary: 8000,
+        minSalary: 2000,
+      });
+
+      (db.prepare as jest.Mock).mockReturnValue({ get: mockGet });
+
+      await fetchSalariesByCountry(req, res);
+
+      expect(mockGet).toHaveBeenCalledWith("india");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        avgSalary: 5000,
+        maxSalary: 8000,
+        minSalary: 2000,
+      });
+    });
+
+    it("should return 400 if country missing", async () => {
+      const req: any = { params: {} };
+      const res = mockResponse();
+
+      await fetchSalariesByCountry(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should handle errors", async () => {
+      const req: any = { params: { country: "india" } };
+      const res = mockResponse();
+
+      (db.prepare as jest.Mock).mockImplementation(() => {
+        throw new Error("DB error");
+      });
+
+      await fetchSalariesByCountry(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
