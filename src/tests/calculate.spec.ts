@@ -1,4 +1,4 @@
-import { calculateSalary } from "./src/services/calculateSalary.service";
+import { calculateSalary } from "../services/calculateSalary.service";
 
 describe("Salary Calculation", () => {
   it("should calculate India TDS correctly", () => {
