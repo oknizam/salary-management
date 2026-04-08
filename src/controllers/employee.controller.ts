@@ -28,20 +28,26 @@ export const getEmployees = async (_req: any, res: any) => {
   }
 }
 
-
 export const getEmployeeById = async (req: any, res: any) => {
   try {
-    if (!req.params.id) {
-      res.status(400).json({ message: "please send employee id" })
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "please send employee id" });
     }
-    const response = getByID(req.params.id);
+
+    const response = getByID(id);
+
+    if (!response) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
     return res.status(200).json(response);
+  } catch (err) {
+    console.log("error in get employees", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
-  catch (err) {
-    console.log("error in get employees", err)
-    return res.status(500).json({ message: "Internal server error" })
-  }
-}
+};
 
 
 
@@ -58,7 +64,7 @@ export const putEmployee = async (req: any, res: any) => {
     UPDATE employees
     SET fullName = ?, jobTitle = ?, country = ?, salary = ?
     WHERE id = ?
-  `).run(fullName, jobTitle, country, salary, id);
+  `).run(fullName.toLowerCase(), jobTitle.toLowerCase(), country.toLowerCase(), salary, id);
 
     if (result.changes === 0) {
       return res.status(404).json({ error: "Employee not found" });
@@ -78,24 +84,38 @@ export const updatEmployee = async (req: any, res: any) => {
     const id = Number(req.params.id);
     const updates = req.body;
 
-    const fields = [];
-    const values = [];
+    if (!req.params.id || isNaN(id)) {
+      return res.status(400).json({ error: "Invalid employee id" });
+    }
 
+    const ALLOWED = ["fullName", "jobTitle", "country", "salary"];
 
-    for (const key in updates) {
-      fields.push(`${key} = ?`);
-      values.push(updates[key]);
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    for (const key of Object.keys(updates)) {
+      if (ALLOWED.includes(key)) {
+        fields.push(`${key} = ?`);
+
+        if (key !== "salary" && typeof updates[key] === "string") {
+          values.push(updates[key].toLowerCase());
+        } else {
+          values.push(updates[key]);
+        }
+      }
     }
 
     if (fields.length === 0) {
-      return res.status(400).json({ error: "No fields provided" });
+      return res.status(400).json({
+        error: "No valid fields provided. Allowed: fullName, jobTitle, country, salary",
+      });
     }
 
     const query = `
-    UPDATE employees
-    SET ${fields.join(", ")}
-    WHERE id = ?
-  `;
+      UPDATE employees
+      SET ${fields.join(", ")}
+      WHERE id = ?
+    `;
 
     const result = db.prepare(query).run(...values, id);
 
@@ -103,13 +123,12 @@ export const updatEmployee = async (req: any, res: any) => {
       return res.status(404).json({ error: "Employee not found" });
     }
 
-    res.json({ message: "Employee partially updated" });
+    return res.json({ message: "Employee partially updated" });
+  } catch (err) {
+    console.log("error in update employee", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
-  catch (err) {
-    console.log("error in get employees", err)
-    return res.status(500).json({ message: "Internal server error" })
-  }
-}
+};
 
 
 export const deleteEmployeeById = async (req: any, res: any) => {
