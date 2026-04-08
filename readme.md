@@ -59,5 +59,34 @@ All AI-generated suggestions were reviewed, validated, and adapted before integr
 
 ---
 
+## 📦 Installation & Setup
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/oknizam/salary-management.git
+cd salary-management
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Development Mode
+```bash
+npm run dev
+```
+
+### 4. Build Project
+```bash
+npm run build
+```
+
+### 5. Run test
+```bash
+npm run test
+```
+
+
 ## 👨‍💻 Author
 Nizamuddin
